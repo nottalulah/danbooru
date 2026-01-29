@@ -25,6 +25,14 @@ class UserPolicy < ApplicationPolicy
     (record.id == user.id && !user.is_anonymous?) || user.is_owner?
   end
 
+  def undelete?
+    reactivate?
+  end
+
+  def reactivate?
+    user.is_admin? && record.is_deleted?
+  end
+
   def destroy?
     deactivate?
   end
@@ -80,6 +88,10 @@ class UserPolicy < ApplicationPolicy
       disable_mobile_gestures enable_safe_mode
       enable_desktop_mode disable_post_tooltips
     ].compact
+  end
+
+  def permitted_attributes_for_reactivate
+    [{ email_address: [:address] }]
   end
 
   def api_attributes

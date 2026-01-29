@@ -17,9 +17,10 @@ class UserDeletion
   # @param deleter [User] the user performing the deletion
   # @param password [String] the user's password (for confirmation)
   # @param request the HTTP request (for logging the deletion in the user event log)
-  def initialize(user:, deleter: user, password: nil, request: nil)
+  def initialize(user:, deleter: user, email_address: nil, password: nil, request: nil)
     @user = user
     @deleter = deleter
+    @email_address = email_address
     @password = password
     @request = request
   end
@@ -47,11 +48,13 @@ class UserDeletion
   end
 
   def undelete!
+    raise StandardError, "Missing email address" if @email_address.blank?
     user.with_lock do
-      user.update!(is_deleted: false, password: password)
+      user.update!(is_deleted: false, password: password, email_address_attributes: { address: @email_address, is_verified: true })
       UserNameChangeRequest.create!(user: user, desired_name: user.user_name_change_requests.order(id: :desc).first.original_name, original_name: user.name)
       ModAction.log("undeleted user ##{user.id}", :user_undelete, subject: user, user: deleter)
       UserEvent.create_from_request!(user, :user_undeletion, request) if request.present?
+      UserMailer.undelete_notice(user).deliver_later
     end
   end
 

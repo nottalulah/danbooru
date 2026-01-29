@@ -219,7 +219,7 @@ class UserDeletionTest < ActiveSupport::TestCase
 
   context "undeleting a user's account" do
     should "restore the user's name and reset their password" do
-      @user = create(:user, name: "fumimi", password: "hunter2")
+      @user = create(:user, name: "fumimi", password: "hunter2", email_address_attributes: { address: "danbooru@example.com" })
       @deletion = UserDeletion.new(user: @user, deleter: create(:owner_user), password: "hunter2")
 
       @deletion.delete!

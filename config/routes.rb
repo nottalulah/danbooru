@@ -284,6 +284,8 @@ Rails.application.routes.draw do
     get :deactivate, on: :collection # /users/deactivate
     get :promote, on: :member # /users/:id/promote
     get :demote, on: :member # /users/:id/demote
+    get :undelete, on: :member
+    post :reactivate, on: :member
   end
   get "/upgrade", to: "user_upgrades#new", as: "new_user_upgrade"
   get "/user_upgrades/new", to: redirect("/upgrade")

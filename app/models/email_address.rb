@@ -78,7 +78,7 @@ class EmailAddress < ApplicationRecord
   end
 
   def update_email_address
-    if saved_change_to_address? && !user.previously_new_record?
+    if saved_change_to_address? && !user.previously_new_record? && request.present?
       UserMailer.with_request(request).email_change_confirmation(user).deliver_later
     end
   end

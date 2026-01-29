@@ -41,6 +41,10 @@ class UserMailerPreview < ActionMailer::Preview
     UserMailer.with(dmca: dmca).dmca_complaint(to: dmca[:email])
   end
 
+  def undelete_notice
+    UserMailer.undelete_notice(user)
+  end
+
   private
 
   def user

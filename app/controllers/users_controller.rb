@@ -109,11 +109,27 @@ class UsersController < ApplicationController
     user_deletion.delete!
 
     if user_deletion.errors.none?
-      respond_with(user_deletion, notice: "Account deactivated", location: posts_path)
+      location = (@user == CurrentUser.user) ? posts_path : user_path(@user)
+      respond_with(user_deletion, notice: "Account deactivated", location: location)
     else
       flash[:notice] = user_deletion.errors.full_messages.join("; ")
       redirect_to deactivate_user_path(@user)
     end
+  end
+
+  # GET
+  def undelete
+    @user = authorize User.find(params[:id])
+    respond_with(@user)
+  end
+
+  # POST
+  def reactivate
+    @user = authorize User.find(params[:id])
+    @email_address = params.dig("user", "email_address", "address").to_s
+    @deletion = UserDeletion.new(user: @user, deleter: CurrentUser.user, email_address: @email_address, password: SecureRandom.uuid, request: request)
+    @deletion.undelete!
+    respond_with(@user, notice: "User undeleted")
   end
 
   def custom_style

@@ -69,14 +69,23 @@
         <% end %>
       <% end %>
 
-      <% if policy(@user).deactivate? %>
+      <% if policy(@user).deactivate? && !@user.is_deleted? %>
         <div class="card-outlined p-2 flex items-center justify-between gap-4">
           <div class="space-y-1">
             <div class="font-bold">Deactivate account</div>
             <div class="fineprint max-w-360px">Permanently deactivate the user's account (requires confirmation).</div>
           </div>
 
-          <%= link_to "Deactivate", deactivate_user_path(@user), class: "button-outline-danger h-fit", disabled: @user.is_deleted? %>
+          <%= link_to "Deactivate", deactivate_user_path(@user), class: "button-outline-danger h-fit" %>
+        </div>
+      <% elsif policy(@user).undelete? %>
+        <div class="card-outlined p-2 flex items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="font-bold">Undelete user</div>
+            <div class="fineprint max-w-360px">Undelete this user's account.</div>
+          </div>
+
+          <%= link_to "Undelete", undelete_user_path(@user), class: "button-primary h-fit" %>
         </div>
       <% end %>
     </div>

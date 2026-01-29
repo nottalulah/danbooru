@@ -222,7 +222,7 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
       should "allow the Owner to delete other users" do
         delete_auth user_path(@user), create(:owner)
 
-        assert_redirected_to posts_path
+        assert_redirected_to user_path(@user)
         assert_equal(true, @user.reload.is_deleted?)
         assert_equal("Account deactivated", flash[:notice])
         assert_not_nil(session[:user_id])
@@ -242,6 +242,42 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
         delete user_path(@user), params: { user: { password: "password" }}
 
         assert_response 403
+      end
+    end
+
+    context "#undelete action" do
+      should "render for admins" do
+        @deleted_user = create(:user, is_deleted: true)
+        get_auth undelete_user_path(@deleted_user), create(:admin_user)
+        assert_response :success
+      end
+
+      should "not render for other users" do
+        @deleted_user = create(:user, is_deleted: true)
+        get_auth undelete_user_path(@deleted_user), @user
+        assert_response 403
+      end
+    end
+
+    context "#reactivate action" do
+      setup do
+        @deleted_user = create(:user)
+        @owner_user = create(:owner_user)
+        UserDeletion.new(user: @deleted_user, deleter: @owner_user, email_address: "builder@example.com").delete!
+        perform_enqueued_jobs
+      end
+
+      should "allow admins to undelete users" do
+        post_auth reactivate_user_path(@deleted_user), create(:admin_user), params: { user: { email_address: { address: "foo@example.com" } } }
+        assert_redirected_to @deleted_user
+        assert_not @deleted_user.reload.is_deleted
+        assert_enqueued_with(job: MailDeliveryJob, args: ->(args) { args[0..1] == %w[UserMailer undelete_notice] })
+      end
+
+      should "not allow other users to undelete users" do
+        post_auth reactivate_user_path(@deleted_user), create(:user), params: { user: { email_address: { address: "foo@example.com" } } }
+        assert_response 403
+        assert_no_enqueued_jobs
       end
     end
 

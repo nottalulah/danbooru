@@ -82,4 +82,15 @@ class UserMailer < ApplicationMailer
       subject: "DMCA complaint",
     )
   end
+
+  def undelete_notice(user)
+    @user = user
+
+    mail_user(
+      @user,
+      from: "#{Danbooru.config.canonical_app_name} <#{Danbooru.config.account_security_email}>",
+      subject: "Your #{Danbooru.config.app_name} account has been restored",
+      require_verified_email: true,
+    )
+  end
 end

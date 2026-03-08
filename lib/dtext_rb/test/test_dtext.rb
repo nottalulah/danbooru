@@ -77,6 +77,7 @@ class DTextTest < Minitest::Test
     assert_mention("user", '[i]@user [/i]')
     assert_mention("user", '[quote]@user:')
     assert_mention("user", 'Twitter/@user')
+    assert_mention("user", "@/user")
     assert_mention("factory", '[b][@factory (Asakura Kotomi)] KotoKoi (Nisekoi)[/b]')
 
     assert_mention("user", "@user's")

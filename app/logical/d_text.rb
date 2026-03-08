@@ -288,7 +288,7 @@ class DText
   #
   # @return [Array<String>] The list of mentioned user names.
   memoize def mentions
-    nodes = parsed_html.css("a.dtext-user-mention-link").select do |mention|
+    nodes = parsed_html.css("a.dtext-user-mention-link:not([data-suppress-mentions])").select do |mention|
       mention.ancestors.none? { |ancestor| ancestor.name == "blockquote" }
     end
 

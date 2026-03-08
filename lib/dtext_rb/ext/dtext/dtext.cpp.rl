@@ -164,6 +164,7 @@ bare_username = ([_.]? mention_nonboundary_char mention_char* mention_nonboundar
 
 bare_mention = ('@' when after_mention_boundary) (bare_username >mark_a1 @mark_a2);
 delimited_mention = '<@' (nonspace nonnewline*) >mark_a1 @mark_a2 :>> '>';
+suppressed_mention = ('@' when after_mention_boundary) '/' (bare_username >mark_a1 @mark_a2);
 
 # The list of tags that can appear in brackets (e.g. [quote]).
 bracket_tags = (
@@ -427,6 +428,10 @@ inline := |*
 
   (bare_mention | delimited_mention) when mentions_enabled => {
     append_mention({ a1, a2 + 1 });
+  };
+
+  suppressed_mention when mentions_enabled => {
+    append_mention({ a1, a2 + 1 }, true);
   };
 
   emoji => {
@@ -956,8 +961,12 @@ void StateMachine::append_absolute_link(const std::string_view url, const std::s
   append("</a>");
 }
 
-void StateMachine::append_mention(const std::string_view name) {
-  append("<a class=\"dtext-link dtext-user-mention-link\" data-user-name=\"");
+void StateMachine::append_mention(const std::string_view name, const bool suppress_mentions) {
+  append("<a class=\"dtext-link dtext-user-mention-link\" ");
+  if (suppress_mentions) {
+    append("data-suppress-mentions=\"true\" ");
+  }
+  append("data-user-name=\"");
   append_html_escaped(name);
   append("\" href=\"");
   append_relative_url("/users?name=");

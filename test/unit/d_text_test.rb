@@ -399,6 +399,11 @@ class DTextTest < ActiveSupport::TestCase
         assert_equal([], DText.new("foo@bar.com").mentions)
         # assert_equal(["foo"], DText.new("@foo", disable_mentions: true).mentions) # XXX
       end
+
+      should "not include suppressed mentions" do
+        assert_equal(["bar"], DText.new("@/foo @bar").mentions)
+        assert_equal('<p><a class="dtext-link dtext-user-mention-link" data-suppress-mentions="true" data-user-name="foo" href="/users?name=foo">@foo</a></p>', format_text("@/foo"))
+      end
     end
   end
 end

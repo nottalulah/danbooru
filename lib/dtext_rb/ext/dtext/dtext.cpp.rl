@@ -164,6 +164,7 @@ bare_username = ([_.]? mention_nonboundary_char mention_char* mention_nonboundar
 
 bare_mention = ('@' when after_mention_boundary) (bare_username >mark_a1 @mark_a2);
 delimited_mention = '<@' (nonspace nonnewline*) >mark_a1 @mark_a2 :>> '>';
+id_mention = '<@#' digit+ >mark_a1 @mark_a2 :>> '>';
 
 # The list of tags that can appear in brackets (e.g. [quote]).
 bracket_tags = (
@@ -423,6 +424,10 @@ inline := |*
 
   delimited_url | unnamed_bbcode_link => {
     append_unnamed_url({ a1, a2 });
+  };
+
+  id_mention when mentions_enabled => {
+    append_id_mention({ a1, a2 + 1 });
   };
 
   (bare_mention | delimited_mention) when mentions_enabled => {
@@ -964,6 +969,17 @@ void StateMachine::append_mention(const std::string_view name) {
   append_uri_escaped(name);
   append("\">@");
   append_html_escaped(name);
+  append("</a>");
+}
+
+void StateMachine::append_id_mention(const std::string_view id) {
+  append("<a class=\"dtext-link dtext-user-mention-link dtext-user-id-mention\" data-user-id=\"");
+  append_html_escaped(id);
+  append("\" href=\"");
+  append_relative_url("/users/");
+  append_uri_escaped(id);
+  append("\">@user_");
+  append_html_escaped(id);
   append("</a>");
 }
 

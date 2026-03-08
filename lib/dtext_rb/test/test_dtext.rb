@@ -103,6 +103,7 @@ class DTextTest < Minitest::Test
 
     assert_parse('<p>this is not @.@ @_@ <a class="dtext-link dtext-user-mention-link" data-user-name="bob" href="/users?name=bob">@bob</a></p>', "this is not @.@ @_@ @bob")
     assert_parse('<p>multiple <a class="dtext-link dtext-user-mention-link" data-user-name="bob" href="/users?name=bob">@bob</a> <a class="dtext-link dtext-user-mention-link" data-user-name="anna" href="/users?name=anna">@anna</a></p>', "multiple @bob @anna")
+    assert_parse('<p><a class="dtext-link dtext-user-mention-link dtext-user-id-mention" data-user-id="1" href="/users/1">@user_1</a></p>', "<@#1>")
 
     assert_mention("_cf", "@_cf")
     assert_mention(".musouka", "@.musouka")

@@ -49,8 +49,9 @@ class DText
     artists = Artist.where(name: references[:wiki_pages])
     media_assets = MediaAsset.where(id: references[:media_assets])
     posts = Post.includes(:media_asset).where(id: references[:posts])
+    mentions = User.where(id: references[:mentions])
 
-    { wiki_pages:, tags:, artists:, media_assets:, posts:, tag_aliases:, tag_implications:, bulk_update_requests: }
+    { wiki_pages:, tags:, artists:, media_assets:, posts:, tag_aliases:, tag_implications:, bulk_update_requests:, mentions: }
   end
 
   # @param dtext [String] The DText input.
@@ -104,6 +105,10 @@ class DText
 
     fragment.css("emoji").each do |node|
       replace_emoji!(node)
+    end
+
+    fragment.css("a.dtext-user-id-mention").each do |node|
+      replace_id_mentions!(node, mentions: references[:mentions])
     end
 
     fragment.to_s.html_safe
@@ -269,6 +274,33 @@ class DText
     node.inner_html = value
   end
 
+  def replace_id_mentions!(node, mentions:)
+    id = node["data-user-id"].to_i
+    user = mentions.find { it.id == id }
+
+    if user.present?
+      node.inner_html = "@#{user.name}"
+    else
+      node.inner_html = "<i>@unknown-user</i>"
+    end
+  end
+
+  def self.rewrite_mentions!(text)
+    dtext = DText.new(text)
+    mentions = dtext.mentions
+    html = dtext.parsed_html.dup
+    users = User.where_text_includes_lower(:name, mentions)
+
+    html.css("a.dtext-user-mention-link[data-user-name]").each do |node|
+      user = users.find { it.name.casecmp?(node["data-user-name"]) }
+      if user.present?
+        node.replace(%{<a class="dtext-link dtext-user-mention-link dtext-user-id-mention" data-user-id="#{user.id}" href="/users/#{user.id}">@#{user.name}</a>})
+      end
+    end
+
+    from_html(html)
+  end
+
   # Return the DText parsed to HTML. This is before the HTML is rewritten to colorize wiki links and replace
   # <media-embed> and <tag-request-embed> tags.
   #
@@ -370,10 +402,11 @@ class DText
     tag_aliases = fragment.css("tag-request-embed").select { |node| node["data-type"] == "tag-alias" }.pluck("data-id").uniq
     tag_implications = fragment.css("tag-request-embed").select { |node| node["data-type"] == "tag-implication" }.pluck("data-id").uniq
     bulk_update_requests = fragment.css("tag-request-embed").select { |node| node["data-type"] == "bulk-update-request" }.pluck("data-id").uniq
+    mentions = fragment.css("a.dtext-user-id-mention").map { it["data-user-id"].to_i }.uniq
 
-    { wiki_pages:, posts:, media_assets:, tag_aliases:, tag_implications:, bulk_update_requests: }
+    { wiki_pages:, posts:, media_assets:, tag_aliases:, tag_implications:, bulk_update_requests:, mentions: }
   rescue DText::Error
-    { wiki_pages: [], posts: [], media_assets: [], tag_aliases: [], tag_implications: [], bulk_update_requests: [] }
+    { wiki_pages: [], posts: [], media_assets: [], tag_aliases: [], tag_implications: [], bulk_update_requests: [], mentions: [] }
   end
 
   # Return a list of external links mentioned in a string of DText.
@@ -453,7 +486,7 @@ class DText
   # @return [String] the quoted DText
   def quote(object)
     stripped_body = strip_blocks("quote")
-    "[quote]\n#{object.creator.name} said in #{object.dtext_shortlink}:\n\n#{stripped_body}\n[/quote]\n\n"
+    "[quote]\n<@##{object.creator.id}> said in #{object.dtext_shortlink}:\n\n#{stripped_body}\n[/quote]\n\n"
   end
 
   # Remove all [<tag>] blocks from the DText.
@@ -661,6 +694,8 @@ class DText
       in "iframe"
         src = element["src"]
         "\n\n#{src}\n\n" if src.present?
+      in "a" if element.attributes["data-user-id"].present?
+        "<@##{element.attributes['data-user-id']}>"
       in "a"
         title = html_to_dtext(element, **options, inline: true, &block).squeeze(" ")
         url = element["href"].to_s

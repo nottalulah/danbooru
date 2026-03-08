@@ -50,6 +50,8 @@ gem "public_suffix"
 gem "debug"
 gem "faker"
 gem "resolv"
+# numo-narray's latest release is broken with GCC 15.x. It was fixed in master but there was no new release.
+gem "numo-narray", github: "ruby-numo/numo-narray", ref: "95c05257349b954c027c2284834408736244662a"
 gem "rover-df"
 gem "ffi-libarchive"
 gem "pry-rails"

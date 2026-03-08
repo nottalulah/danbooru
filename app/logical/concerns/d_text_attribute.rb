@@ -56,6 +56,13 @@ module DTextAttribute
         memoize "dtext_#{name}"                      # memoize :dtext_body
         memoize "dtext_#{name}_was"                  # memoize :dtext_body_was
 
+        define_method "rewrite_mentions!" do
+          return if !send(:attribute_changed?, name)
+
+          text = send(name)
+          send("#{name}=", DText.rewrite_mentions!(text))
+        end
+
         prepended do
           if media_embeds.present? && method_defined?(:"#{name}_changed?")
             # validates :body, media_embed: { ... }, if: :body_changed?
@@ -64,6 +71,8 @@ module DTextAttribute
             # validates :body, media_embed: { ... }, if: ->(model) { model.dtext_body.present? }
             validates name, media_embed: media_embeds, if: ->(model) { model.send("dtext_#{name}").present? }
           end
+
+          before_save :rewrite_mentions!
         end
       end
 

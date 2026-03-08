@@ -187,6 +187,7 @@ public:
 
   void append_header(char header, const std::string_view id);
   void append_mention(const std::string_view name);
+  void append_id_mention(const std::string_view id);
   void append_id_link(const char *title, const char *id_name, const char *url, const std::string_view id);
   void append_bare_unnamed_url(const std::string_view url);
   void append_unnamed_url(const std::string_view url);

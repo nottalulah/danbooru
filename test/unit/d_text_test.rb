@@ -399,6 +399,11 @@ class DTextTest < ActiveSupport::TestCase
         assert_equal([], DText.new("foo@bar.com").mentions)
         # assert_equal(["foo"], DText.new("@foo", disable_mentions: true).mentions) # XXX
       end
+
+      should "rewrite username mentions to ids" do
+        user = create(:user)
+        assert_equal("<@##{user.id}>", DText.rewrite_mentions!("@#{user.name}"))
+      end
     end
   end
 end
